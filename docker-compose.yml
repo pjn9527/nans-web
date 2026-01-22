@@ -1,0 +1,31 @@
+services:
+  # 服务 1: Flask 后端
+  flask-app:
+    build: .
+    container_name: my-backend
+    restart: always
+    environment:
+      - SECRET_KEY=dev-key-change-this-in-prod
+      - DATABASE_URL=sqlite:///app.db
+    volumes:
+      - ./app.db:/app/app.db   # 保持不变：数据库持久化
+      - ./:/app                # 👈 【新增这行】把当前所有代码实时映射进容器！
+    expose:
+      - "5000"
+
+  # ... Nginx 部分保持不变 ...
+
+  # 服务 2: Nginx 前端 + 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: my-nginx
+    restart: always
+    ports:
+      - "80:80" # 电脑的 80 端口 -> 容器的 80 端口
+    volumes:
+      # 1. 挂载前端代码：把你本地的 frontend 文件夹 映射到 Nginx 的网页目录
+      - ./frontend:/usr/share/nginx/html
+      # 2. 挂载配置文件：把你写的 config 映射进去
+      - ./nginx/flask.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - flask-app # 确保 Flask 先启动

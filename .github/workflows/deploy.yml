@@ -1,0 +1,42 @@
+# 定义工作流
+name: Auto Deploy
+
+# 设置触发条件：当代码被push到main分支触发
+on:
+  push:
+    branches:
+      - main
+
+# 定义一个job：启动一个叫deploy的任务
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+# 使用 GitHub 的官方插件：拉取提交的最新代码
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+# 使用 GitHub 提供的 Secrets（预先保存的服务器 SSH 私钥），启动一个 SSH-agent，让后面的 ssh 命令可以安全登录服务器
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+# 登录服务器并部署，清除任何被占用的80端口，再进行拉取，同时销除旧容器，建立新容器
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@43.134.70.241 << 'EOF'
+            echo "--- 🧹 Cleaning up port 80..."
+            sudo systemctl stop nginx || true
+            sudo systemctl disable nginx || true
+            sudo pkill nginx || true
+            echo "--- 🔍 Check who is still using port 80 (after clean-up)"
+            sudo lsof -iTCP:80 -sTCP:LISTEN || true
+            echo "--- 📁 Deploying project"
+            cd ~/flask-mega
+            git pull origin main
+            docker compose down --remove-orphans
+            docker compose build --no-cache
+            docker compose up -d
+          EOF

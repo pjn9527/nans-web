@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="My AI Portfolio" />
+        <meta name="author" content="" />
+        <title>AI Engineer Portfolio</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet" />
+        <link href="css/styles.css" rel="stylesheet" />
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    </head>
+    <body id="page-top">
+        <div id="app"> 
+            <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+                <div class="container px-4 px-lg-5">
+                    <a class="navbar-brand" href="#page-top">{{ t[currentLang].brand_name }}</a>
+                    <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                        {{ t[currentLang].menu_text }}
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarResponsive">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item"><a class="nav-link" href="#about">{{ t[currentLang].nav_about }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#projects">{{ t[currentLang].nav_projects }}</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" @click.prevent="toggleLang">
+                                    <i class="fas fa-language"></i> {{ t[currentLang].lang_switch }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <header class="masthead" :style="heroBgStyle">
+                <div class="container px-4 px-lg-5 d-flex h-100 align-items-center justify-content-center">
+                    <div class="d-flex justify-content-center">
+                        <div class="text-center">
+                            <h1 class="mx-auto my-0 text-uppercase">{{ t[currentLang].hero_title }}</h1>
+                            <h2 class="text-white-50 mx-auto mt-2 mb-5">{{ t[currentLang].hero_subtitle }}</h2>
+                            <a class="btn btn-primary" href="#projects">{{ t[currentLang].btn_view_work }}</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="about-section text-center" id="about">
+                <div class="container px-4 px-lg-5">
+                    <div class="row gx-4 gx-lg-5 justify-content-center">
+                        <div class="col-lg-8">
+                            <h2 class="text-white mb-4">{{ t[currentLang].about_title }}</h2>
+                            <p class="text-white-50" v-html="t[currentLang].about_desc"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-5">
+                        <img class="img-fluid shadow-lg rounded-4" 
+                             :src="aboutImgUrl" 
+                             alt="Daily Inspiration" 
+                             style="max-height: 500px; width: auto; border: 5px solid rgba(255,255,255,0.1);" />
+                        <p class="text-white-50 mt-2 small fst-italic">{{ t[currentLang].daily_inspiration }}</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="projects-section bg-light" id="projects">
+                <div class="container px-4 px-lg-5">
+                    <div v-if="projects.length === 0" class="text-center py-5">
+                        <h4 class="text-muted">{{ t[currentLang].project_loading }}</h4>
+                    </div>
+
+                    <div class="row gx-0 mb-5 mb-lg-0 justify-content-center" v-for="(project, index) in projects" :key="project.id">
+                        <div class="col-lg-6">
+                            <img class="img-fluid" :src="project.image_url || 'assets/img/demo-image-01.jpg'" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div class="col-lg-6" :class="{ 'order-lg-first': index % 2 !== 0 }">
+                            <div class="bg-black text-center h-100 project">
+                                <div class="d-flex h-100">
+                                    <div class="project-text w-100 my-auto text-center text-lg-left px-4">
+                                        <h4 class="text-white">{{ project.title }}</h4>
+                                        <p class="mb-0 text-white-50">{{ project.description }}</p>
+                                        <hr class="d-none d-lg-block mb-0 ms-0" />
+                                        <div class="mt-4">
+                                            <a :href="'project.html?id=' + project.id" class="btn btn-outline-light">
+                                                {{ t[currentLang].btn_enter }} <i class="fas fa-arrow-right ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer bg-black small text-center text-white-50">
+                <div class="container px-4 px-lg-5">
+                    {{ t[currentLang].footer_text }}
+                    <a href="/admin" target="_blank" style="text-decoration: none; color: inherit; opacity: 0.2; margin-left: 10px;" title="Admin Login">.</a>
+                </div>
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="js/scripts.js"></script>
+        
+        <script>
+            const { createApp } = Vue;
+
+            createApp({
+                data() {
+                    return {
+                        projects: [],
+                        currentLang: 'en', 
+                        heroBgStyle: {}, 
+                        aboutImgUrl: '',
+                        t: {
+                            en: {
+                                brand_name: "My Portfolio",
+                                menu_text: "Menu",
+                                nav_about: "About",
+                                nav_projects: "Projects",
+                                nav_admin: "Admin",
+                                hero_title: "AI Builder",
+                                hero_subtitle: "Exploring the frontier of RAG, Agents, and Algo-Trading.",
+                                btn_view_work: "View My Work",
+                                about_title: "Code, Data & Strategy",
+                                about_desc: "This is my personal playground. From building intelligent <strong>AI Bartenders</strong> to creating automated <strong>Trading Strategies</strong>. Everything here is powered by Python, Flask, and Docker.",
+                                daily_inspiration: "Daily Inspiration from Bing", // 【修复】英文
+                                project_loading: "Loading projects...",
+                                btn_enter: "Enter Project",
+                                footer_text: "Copyright © My Portfolio 2026",
+                                lang_switch: "中文"
+                            },
+                            zh: {
+                                brand_name: "我的作品集",
+                                menu_text: "菜单",
+                                nav_about: "关于我",
+                                nav_projects: "项目展示",
+                                nav_admin: "后台管理",
+                                hero_title: "AI 构建者",
+                                hero_subtitle: "探索 RAG、智能体和算法交易的前沿领域。",
+                                btn_view_work: "查看我的作品",
+                                about_title: "代码、数据与策略",
+                                about_desc: "这是我的个人游乐场。从构建智能的 <strong>AI 调酒师</strong>，到开发自动化的 <strong>量化交易策略</strong>。这里的一切由 Python, Flask 和 Docker 驱动。",
+                                daily_inspiration: "来自必应的每日灵感", // 【修复】中文
+                                project_loading: "正在加载项目...",
+                                btn_enter: "进入项目",
+                                footer_text: "Copyright © 我的作品集 2026",
+                                lang_switch: "English"
+                            }
+                        }
+                    }
+                },
+                mounted() {
+                    this.fetchProjects();
+                    this.setBingWallpaper();
+                },
+                methods: {
+                    async fetchProjects() {
+                        try {
+                            const response = await fetch('/api/projects');
+                            if (response.ok) {
+                                this.projects = await response.json();
+                            }
+                        } catch (error) {
+                            console.error('Error loading projects:', error);
+                        }
+                    },
+                    toggleLang() {
+                        this.currentLang = this.currentLang === 'en' ? 'zh' : 'en';
+                    },
+                    setBingWallpaper() {
+                        const todayUrl = 'https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN';
+                        this.heroBgStyle = {
+                            backgroundImage: `linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 75%, #000 100%), url('${todayUrl}')`
+                        };
+                        this.aboutImgUrl = 'https://bing.biturl.top/?resolution=1920&format=image&index=1&mkt=zh-CN';
+                    }
+                }
+            }).mount('#app');
+        </script>
+    </body>
+</html>

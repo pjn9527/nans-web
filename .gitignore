@@ -1,0 +1,69 @@
+# === 核心安全 (绝对不能删) ===
+.env
+*.env
+.env.*
+secrets/
+config/credentials.*
+instance/
+.flaskenv
+
+# === 你的项目特有 ===
+# 忽略 Wallpaper Engine 的高清源图 (防止仓库爆炸)
+raw_wallpapers/
+# 忽略处理壁纸的临时缩略图缓存 (如果有的话)
+.thumbnails/
+
+# === Python 垃圾文件 ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+wheels/
+pip-wheel-metadata/
+*.whl
+
+# === 虚拟环境 ===
+venv/
+env/
+.venv/
+
+# === 测试 & 覆盖率 ===
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# === Flask 翻译 ===
+# 忽略编译后的机器文件 (.mo)
+**/messages.mo
+# ⚠️ 注意：我们要保留 .po (源文件)，所以这里不要写 .po
+
+# === 日志 & 数据库 ===
+logs/
+*.sqlite3
+*.db
+*.dump
+
+# === 数据文件夹 ===
+# 如果你的 assets 放在 data 里，请把这行注释掉，否则图片传不上去
+# data/ 
+esdata/
+
+# === Docker ===
+docker-compose.override.yml
+
+# === IDE & 系统 ===
+.vscode/
+.idea/
+*.so
+*.dylib
+*.dll
+.DS_Store
+.AppleDouble
+Thumbs.db
+ehthumbs.db
