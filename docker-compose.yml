@@ -4,16 +4,15 @@ services:
     build: .
     container_name: my-backend
     restart: always
-    environment:
-      - SECRET_KEY=dev-key-change-this-in-prod
-      - DATABASE_URL=sqlite:///app.db
+    # 👇 【修改点1】不再写死密钥，改为读取 .env 文件
+    # 这样服务器上就会用服务器的密钥，本地用本地的
+    env_file:
+      - .env
     volumes:
-      - ./app.db:/app/app.db   # 保持不变：数据库持久化
-      - ./:/app                # 👈 【新增这行】把当前所有代码实时映射进容器！
+      - ./app.db:/app/app.db   # 数据库持久化
+      - ./:/app                # 实时代码映射
     expose:
       - "5000"
-
-  # ... Nginx 部分保持不变 ...
 
   # 服务 2: Nginx 前端 + 反向代理
   nginx:
@@ -21,11 +20,19 @@ services:
     container_name: my-nginx
     restart: always
     ports:
-      - "80:80" # 电脑的 80 端口 -> 容器的 80 端口
+      - "80:80"
+      - "443:443"  # 👈 【修改点2】必须开启 HTTPS 端口！
     volumes:
-      # 1. 挂载前端代码：把你本地的 frontend 文件夹 映射到 Nginx 的网页目录
-      - ./frontend:/usr/share/nginx/html
-      # 2. 挂载配置文件：把你写的 config 映射进去
+      # 1. 挂载 Nginx 配置文件
       - ./nginx/flask.conf:/etc/nginx/conf.d/default.conf
+      
+      # 2. 👇 【修改点3】挂载 HTTPS 证书 (关键！)
+      # 只读模式 (:ro) 挂载，保证安全
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      
+      # 3. 👇 【修改点4】静态文件映射
+      # 为了让 Nginx 能处理静态图片/CSS，需要把 flask 的 static 文件夹也给它看一眼
+      - ./app/static:/app/app/static
+      
     depends_on:
-      - flask-app # 确保 Flask 先启动
+      - flask-app
