@@ -33,6 +33,6 @@ services:
       # 3. 👇 【修改点4】静态文件映射
       # 为了让 Nginx 能处理静态图片/CSS，需要把 flask 的 static 文件夹也给它看一眼
       - ./app/static:/app/app/static
-      
+      - ./frontend:/usr/share/nginx/html
     depends_on:
       - flask-app
