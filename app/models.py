@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
 from app import db, login
 
+
 # === 1. 用户模型 (保持不变) ===
 class User(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
