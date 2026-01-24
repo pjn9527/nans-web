@@ -9,30 +9,33 @@ from app.models import User
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # 1. 如果已经登录，不要去 main.index (那是API)，直接去后台 admin.index
+    # 1. 如果已经登录了，直接去后台
     if current_user.is_authenticated:
         return redirect(url_for('admin.index'))
-        
+
     form = LoginForm()
     if form.validate_on_submit():
-        user = db.session.scalar(sa.select(User).where(User.username == form.username.data))
+        # 2. 去数据库找这个人
+        user = db.session.scalar(
+            db.select(User).where(User.username == form.username.data))
         
+        # 3. 验证密码
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
+            flash('用户名或密码错误')
             return redirect(url_for('auth.login'))
-            
+        
+        # 4. 登进去！
         login_user(user, remember=form.remember_me.data)
         
+        # 5. 处理跳转 (如果是被踢出来的，登录后跳回原处)
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
-            # 2. 登录成功后的默认跳转，也改成后台 admin.index
             next_page = url_for('admin.index')
         return redirect(next_page)
-    
-    return render_template('auth/login.html', title='Sign In', form=form)
+
+    return render_template('auth/login.html', title='登录', form=form)
 
 @bp.route('/logout')
 def logout():
     logout_user()
-    # 3. 登出后，不要去首页(那是Vue的地盘)，直接跳回登录页，方便下次登录
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('main.index'))
