@@ -16,17 +16,12 @@ login = LoginManager()
 login.login_view = 'auth.login'
 # login.login_message = _l('Please log in to access this page.')
 
-# === 【关键调整 1】 把安全类的定义移到 Admin 初始化之前 ===
-# 否则 Python 执行到 Admin(...) 时，还不知道 SecureAdminIndexView 是什么
-
+# === 安全视图定义 ===
 class SecureModelView(ModelView):
     def is_accessible(self):
-        # 只有登录用户才能看！
         return current_user.is_authenticated
 
     def inaccessible_callback(self, name, **kwargs):
-        # 没登录？踢到登录页去！
-        # 注意：这里要用 request.url 获取当前页面，以便登录后跳回来
         return redirect(url_for('auth.login', next=request.url))
 
 class SecureAdminIndexView(AdminIndexView):
@@ -36,10 +31,9 @@ class SecureAdminIndexView(AdminIndexView):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('auth.login', next=request.url))
 
-# === 【关键调整 2】 初始化 Admin 时，挂上首页锁 ===
-# 加上 template_mode='bootstrap3' 是为了保证样式兼容性
+# === 初始化 Admin ===
 admin = Admin(name='我的作品集后台', 
-              index_view=SecureAdminIndexView())
+              index_view=SecureAdminIndexView(),)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -63,22 +57,30 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
 
     # 3. 注册 Admin 视图
-    # === 【关键调整 3】 这里必须用 SecureModelView，而不是普通的 ModelView ===
-    from app.models import User, Project, ProjectUpdate
+    # 引入所有新模型
+    from app.models import User, Project, DevLog, Reaction
     
+    # 获取已注册视图列表，防止重复注册（在某些调试模式下很有用）
     existing_views = [v.name for v in admin._views]
     
+    # --- 注册 User ---
     if '用户管理' not in existing_views:
-        # 👇 这里的 ModelView 全都改成了 SecureModelView
         admin.add_view(SecureModelView(User, db.session, name='用户管理'))
     
+    # --- 注册 Project ---
     if '作品管理' not in existing_views:
         admin.add_view(SecureModelView(Project, db.session, name='作品管理'))
     
-    if 'Project Updates' not in existing_views:
-        admin.add_view(SecureModelView(ProjectUpdate, db.session, name='Project Updates'))
+    # --- 【修改点】注册 DevLog (替代旧的 ProjectUpdate) ---
+    if '开发日志' not in existing_views:
+        # 这里把 ProjectUpdate 换成了 DevLog
+        admin.add_view(SecureModelView(DevLog, db.session, name='开发日志'))
 
-    # 4. 日志配置 (保持不变)
+    # --- 【新增】注册 Reaction (监控点赞数据) ---
+    if '互动记录' not in existing_views:
+        admin.add_view(SecureModelView(Reaction, db.session, name='互动记录'))
+
+    # 4. 日志配置
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:
             auth = None

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>{{ project.title }} - DevLog</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        /* === 你的 V3 暗黑风格样式 (完整保留) === */
+        :root {
+            --bg-color: #0f1012;
+            --drawer-bg: #16171a;
+            --accent-color: #f59e0b;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden; /* 禁止 body 滚动 */
+            height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5 { font-family: 'Exo 2', sans-serif; color: #fff; }
+
+        /* === 新增：返回主页按钮 (左上角) === */
+        .home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px; /* 左上角 */
+            z-index: 2000;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid #444;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .home-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #fff;
+        }     
+
+
+        /* 语言切换按钮 (悬浮在右上角) */
+        .lang-switch-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid #444;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .lang-switch-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* === LAYER 1: 项目介绍层 === */
+        #project-intro-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100vh;
+            padding-top: 60px;
+            padding-bottom: 25vh; 
+            overflow-y: auto; 
+            transition: filter 0.4s ease;
+        }
+
+        /* 状态：抽屉打开时，底层模糊 */
+        body.drawer-open #project-intro-layer {
+            filter: blur(8px);
+        }
+
+        /* === NEW: 遮罩层 (Backdrop) === */
+        #backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 900;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+
+        body.drawer-open #backdrop {
+            opacity: 1;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* === LAYER 2: 日志抽屉层 === */
+        #devlog-drawer {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            height: 22vh; /* 默认状态 */
+            background-color: var(--drawer-bg);
+            box-shadow: 0 -10px 50px rgba(0,0,0,0.8);
+            border-top: 1px solid #2d2d2d;
+            transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 1000;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        #devlog-drawer.expanded {
+            height: 85vh; /* 展开状态 */
+            cursor: default;
+            background-color: #1a1b1e;
+        }
+
+        /* 抽屉把手 */
+        .drawer-handle {
+            position: sticky;
+            left: 0; top: 0;
+            width: 100vw;
+            height: 28px;
+            background: rgba(22, 23, 26, 0.98);
+            border-bottom: 1px solid #2a2a2a;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; 
+        }
+
+        body.drawer-open .drawer-handle span {
+            pointer-events: auto;
+            cursor: pointer;
+            padding: 0 20px;
+        }
+
+        .handle-text {
+            font-size: 12px;
+            color: #666;
+            transition: color 0.3s;
+        }
+        
+        #devlog-drawer:hover .handle-text { color: var(--accent-color); }
+
+        /* === 卡片设计 === */
+        .ethereal-panel {
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+            padding: 45px 30px 20px 30px; 
+            border-right: 1px solid #2d2d2d;
+            white-space: normal; 
+            opacity: 0.5;
+            transform: scale(0.98);
+            transition: all 0.3s ease;
+        }
+
+        #devlog-drawer.expanded .ethereal-panel:hover,
+        #devlog-drawer.expanded .ethereal-panel {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .panel-intro-card {
+            width: 280px;
+            background: linear-gradient(145deg, #1f2226 0%, #111 100%);
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .panel-log-card {
+            width: 500px; 
+            overflow-y: auto; 
+        }
+
+        .log-title {
+            font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 12px;
+        }
+        
+        .log-content {
+            color: var(--text-muted); line-height: 1.6; font-size: 1rem; 
+        }
+        
+        /* === 互动按钮 === */
+        .reaction-bar {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #333;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-reaction {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #333;
+            color: #888;
+            border-radius: 8px;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn-reaction:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: #555;
+            color: #fff;
+        }
+
+        .btn-reaction.active {
+            border-color: var(--accent-color);
+            color: #fff;
+            background: rgba(245, 158, 11, 0.15);
+        }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body id="body-target">
+    <div id="app">
+
+        <a href="/" class="home-btn">
+        <i class="fas fa-arrow-left me-1"></i> ${ t[currentLang].back_home }
+        </a>
+
+        <button class="lang-switch-btn" @click="toggleLang">
+            <i class="fas fa-language me-1"></i> ${ t[currentLang].lang_switch }
+        </button>
+
+        <div id="backdrop" @click="closeDrawer"></div>
+
+        <div id="project-intro-layer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 offset-lg-2">
+                        <span class="badge bg-secondary mb-3">${ t[currentLang].phase_badge }</span>
+                        
+                        <h1 class="display-3 fw-bold mb-4">
+                            {{ project.title }}
+                        </h1>
+                        
+                        <p class="lead text-light mb-5">
+                            {{ project.description }}
+                        </p>
+
+                        <div class="row mb-5 g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 border border-secondary rounded bg-dark bg-opacity-25">
+                                    <h3 class="fw-bold mb-0">{{ project.progress }}%</h3>
+                                    <small class="text-secondary">${ t[currentLang].stats_progress }</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border border-secondary rounded bg-dark bg-opacity-25">
+                                    <h3 class="fw-bold mb-0">{{ project.views }}</h3>
+                                    <small class="text-secondary">${ t[currentLang].stats_views }</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 border border-secondary rounded bg-dark bg-opacity-25">
+                                    <h3 class="fw-bold mb-0">v1.0</h3>
+                                    <small class="text-secondary">${ t[currentLang].stats_version }</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            {% if project.demo_link %}
+                            <a href="{{ project.demo_link }}" target="_blank" class="btn btn-warning px-4 py-2 fw-bold">
+                                <i class="fas fa-play me-2"></i> ${ t[currentLang].btn_launch }
+                            </a>
+                            {% endif %}
+                            {% if project.source_link %}
+                            <a href="{{ project.source_link }}" target="_blank" class="btn btn-outline-light px-4 py-2">
+                                <i class="fab fa-github me-2"></i> ${ t[currentLang].btn_source }
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <div style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="devlog-drawer" 
+             :class="{ expanded: isDrawerExpanded }" 
+             @click="openDrawer"
+             @wheel="handleWheel">
+            
+            <div class="drawer-handle">
+                <span class="handle-text" @click.stop="closeDrawer">
+                    <i :class="isDrawerExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-up'"></i> 
+                    ${ isDrawerExpanded ? t[currentLang].handle_collapse : t[currentLang].handle_expand }
+                </span>
+            </div>
+
+            <div class="ethereal-panel panel-intro-card">
+                <h2 class="fw-bold text-white mb-3">DevLog</h2>
+                <p style="color: #bbb;">
+                    <i class="fas fa-terminal me-2"></i> ${ t[currentLang].intro_line1 }<br>
+                    <i class="fas fa-mouse me-2"></i> ${ t[currentLang].intro_line2 }
+                </p>
+            </div>
+
+            {% for log in logs %}
+            <div class="ethereal-panel panel-log-card">
+                <div style="color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">
+                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                </div>
+                
+                <div class="log-content">
+                    <p style="white-space: pre-wrap;">{{ log.content }}</p>
+                </div>
+                
+                <div class="reaction-bar">
+                    <button class="btn-reaction" @click.stop="toggleReaction({{ log.id }}, 'fire', $event)">
+                        🔥 <span class="count" id="count-{{ log.id }}-fire">{{ log.reactions_summary['fire'] }}</span>
+                    </button>
+                    <button class="btn-reaction" @click.stop="toggleReaction({{ log.id }}, 'rocket', $event)">
+                        🚀 <span class="count" id="count-{{ log.id }}-rocket">{{ log.reactions_summary['rocket'] }}</span>
+                    </button>
+                    <button class="btn-reaction" @click.stop="toggleReaction({{ log.id }}, 'heart', $event)">
+                        ❤️ <span class="count" id="count-{{ log.id }}-heart">{{ log.reactions_summary['heart'] }}</span>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="ethereal-panel panel-log-card">
+                <h3 class="log-title text-muted">No logs yet...</h3>
+            </div>
+            {% endfor %}
+            
+            <div style="display:inline-block; width: 50px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            // 【关键配置】修改 Vue 分隔符，避免与 Jinja2 的冲突
+            delimiters: ['${', '}'],
+            
+            data() {
+                return {
+                    currentLang: 'en', // 默认语言
+                    isDrawerExpanded: false,
+                    // 翻译字典 (和你的 index.html 保持一致的结构)
+                    t: {
+                        en: {
+                            lang_switch: "中文",
+                            phase_badge: "Phase 5: Product Pivot",
+                            stats_progress: "Development Progress",
+                            stats_views: "Total Views",
+                            stats_version: "Current Version",
+                            btn_launch: "Launch Demo",
+                            btn_source: "Source Code",
+                            handle_expand: "DevLog (Click to expand)",
+                            handle_collapse: "Click to collapse",
+                            intro_line1: "Track development journey",
+                            back_home: "Back to Home", // <--- 新增
+                            lang_switch: "中文",
+                            intro_line2: "Scroll horizontally to view"
+                        },
+                        zh: {
+                            lang_switch: "English",
+                            phase_badge: "阶段 5: 产品化转型",
+                            stats_progress: "开发进度",
+                            stats_views: "浏览次数",
+                            stats_version: "当前版本",
+                            btn_launch: "试玩 Demo",
+                            btn_source: "查看源码",
+                            handle_expand: "开发日志 (点击展开)",
+                            handle_collapse: "点击此处收起",
+                            intro_line1: "记录项目开发点滴",
+                            back_home: "返回主页",
+                            lang_switch: "English",
+                            intro_line2: "左右滑动查看历史"
+                        }
+                    }
+                }
+            },
+            watch: {
+                // 监听抽屉状态，控制 body 的模糊效果
+                isDrawerExpanded(newVal) {
+                    const body = document.getElementById('body-target');
+                    if (newVal) {
+                        body.classList.add('drawer-open');
+                    } else {
+                        body.classList.remove('drawer-open');
+                    }
+                }
+            },
+            methods: {
+                toggleLang() {
+                    this.currentLang = this.currentLang === 'en' ? 'zh' : 'en';
+                },
+                openDrawer(e) {
+                    // 如果点的是按钮，不触发展开
+                    if (e.target.closest('button')) return;
+                    if (this.isDrawerExpanded) return;
+                    this.isDrawerExpanded = true;
+                },
+                closeDrawer() {
+                    this.isDrawerExpanded = false;
+                },
+                handleWheel(e) {
+                    // 横向滚动逻辑
+                    const drawer = e.currentTarget;
+                    if (e.deltaY !== 0) {
+                        // 阻止默认垂直滚动
+                        // e.preventDefault(); // Vue 中 @wheel 默认是被动的，如果不生效需要检查浏览器
+                        // 手动设置 scrollLeft
+                        drawer.scrollLeft += e.deltaY;
+                    }
+                },
+                async toggleReaction(logId, type, event) {
+                    // 前端交互逻辑
+                    const btn = event.currentTarget;
+                    const countSpan = btn.querySelector('.count');
+                    let count = parseInt(countSpan.innerText);
+                    
+                    // 简单的 Optimistic UI 更新 (先变界面，再发请求)
+                    if (btn.classList.contains('active')) {
+                        // 取消点赞
+                        btn.classList.remove('active');
+                        countSpan.innerText = count - 1;
+                    } else {
+                        // 点赞
+                        btn.classList.add('active');
+                        countSpan.innerText = count + 1;
+                        // 动画
+                        btn.style.transform = "scale(0.9)";
+                        setTimeout(() => { btn.style.transform = "scale(1)"; }, 150);
+                    }
+
+                    // 发送 API 请求
+                    try {
+                        await fetch(`/api/logs/${logId}/react`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ type: type })
+                        });
+                        // 实际开发中应该处理 API 报错并回滚 UI，这里简化处理
+                    } catch (error) {
+                        console.error('Reaction error:', error);
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
