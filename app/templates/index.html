@@ -108,6 +108,11 @@
             <footer class="footer bg-black small text-center text-white-50">
                 <div class="container px-4 px-lg-5">
                     ${ t[currentLang].footer_text }
+                    
+                    <span class="mx-2">|</span>
+                    <a :href="'mailto:' + t[currentLang].footer_email.split('：')[1] || t[currentLang].footer_email.split(': ')[1]" style="color: inherit; text-decoration: none;">
+                        ${ t[currentLang].footer_email }
+                    </a>
                     <a href="/admin" target="_blank" style="text-decoration: none; color: inherit; opacity: 0.2; margin-left: 10px;" title="Admin Login">.</a>
                 </div>
             </footer>
@@ -148,6 +153,7 @@
                                 project_loading: "Loading projects...",
                                 btn_enter: "Enter Project",
                                 footer_text: "Copyright © My Portfolio 2026",
+                                footer_email: "Email: 576716309@qq.com",
                                 lang_switch: "中文"
                             },
                             zh: {
@@ -168,6 +174,7 @@
                                 project_loading: "正在加载项目...",
                                 btn_enter: "进入项目",
                                 footer_text: "Copyright © 我的作品集 2026",
+                                footer_email: "邮箱：576716309@qq.com",
                                 lang_switch: "English"
                             }
                         }
