@@ -82,16 +82,25 @@ def project_detail(slug):
     query = sa.select(Project).where(Project.slug == slug)
     project = db.session.scalar(query)
     
+    # 【核心修改点】
     if not project:
-        return render_template('errors/404.html'), 404
+        # 原代码：return render_template('errors/404.html'), 404
+        # 修改为：返回 JSON，彻底避免 500 报错
+        return jsonify({
+            'error': 'Project not found', 
+            'message': f'The project "{slug}" does not exist or has been removed.'
+        }), 404
 
+    # 浏览量 +1
     project.views += 1
     db.session.commit()
     
+    # 获取开发日志
     logs = db.session.scalars(
         sa.select(DevLog).where(DevLog.project_id == project.id).order_by(DevLog.timestamp.desc())
     ).all()
     
+    # 正常情况依然渲染详情页模板
     return render_template('project_detail.html', project=project, logs=logs)
 
 # [修改 2] 底部新增：Bing 图片代理路由

@@ -5,6 +5,7 @@ import sqlalchemy.orm as so
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
+import re  # <--- [新增] 必须导入 re 模块用于正则替换
 from app import db, login
 
 # === 1. 用户模型 (保持不变) ===
@@ -58,8 +59,28 @@ class Project(db.Model):
     # 【Phase 5 新增】统计浏览量
     views: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
 
-    # 关联关系：改为 'DevLog' (原 ProjectUpdate)
+    # 关联关系
     logs: so.Mapped[List['DevLog']] = so.relationship(back_populates='project', cascade='all, delete-orphan')
+
+    # --- [新增功能开始] 自动生成 Slug ---
+    def __init__(self, **kwargs):
+        # 这一行确保父类初始化正常执行
+        super().__init__(**kwargs)
+        # 如果有标题但没 slug，自动生成
+        if self.title and not self.slug:
+            self.slug = self._generate_slug(self.title)
+
+    @staticmethod
+    def _generate_slug(target_str):
+        # 1. 转小写
+        s = target_str.lower()
+        # 2. 移除所有非字母数字字符（保留空格和横杠）
+        s = re.sub(r'[^\w\s-]', '', s)
+        # 3. 将空格和下划线替换为横杠
+        s = re.sub(r'[\s_-]+', '-', s)
+        # 4. 去除首尾横杠
+        return s.strip('-')
+    # --- [新增功能结束] ---
 
     def to_dict(self):
         return {
@@ -83,22 +104,19 @@ class Project(db.Model):
         return '<Project {}>'.format(self.title)
 
 
-# === 3. 开发日志模型 (原 ProjectUpdate) ===
-# 建议改名为 DevLog，更符合 "碎碎念" 的定义
+# === 3. 开发日志模型 (保持不变) ===
 class DevLog(db.Model):
     __tablename__ = 'dev_log'
 
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    content: so.Mapped[str] = so.mapped_column(sa.Text) # 支持 Markdown
+    content: so.Mapped[str] = so.mapped_column(sa.Text)
     timestamp: so.Mapped[datetime] = so.mapped_column(index=True, default=lambda: datetime.now(timezone.utc))
     
-    # 外键
     project_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('project.id'))
     project: so.Mapped['Project'] = so.relationship(back_populates='logs')
 
-    # 【重要改动】删除 integer 计数器，改为关联 Reaction 表
-    # 这样我们才能追踪 "谁" 点了赞，从而防止无限点击
     reactions: so.Mapped[List['Reaction']] = so.relationship(back_populates='dev_log', cascade='all, delete-orphan')
+    
     @property
     def reactions_summary(self):
         return {
@@ -106,8 +124,8 @@ class DevLog(db.Model):
             'heart': len([r for r in self.reactions if r.emoji_type == 'heart']),
             'rocket': len([r for r in self.reactions if r.emoji_type == 'rocket'])
         }
+        
     def to_dict(self):
-        # 统计逻辑放到 to_dict 里计算，保证数据绝对准确
         return {
             'id': self.id,
             'content': self.content,
@@ -115,23 +133,17 @@ class DevLog(db.Model):
             'reactions_summary': self.reactions_summary
         }
 
-# === 4. 【Phase 5 新增】互动/点赞记录表 ===
+# === 4. 互动/点赞模型 (保持不变) ===
 class Reaction(db.Model):
     __tablename__ = 'reaction'
     __table_args__ = (
-        # 【核心逻辑】联合唯一索引
-        # 确保：同一个 visitor_hash 在同一个 dev_log 下，只能对同一种 emoji 点赞一次
         sa.UniqueConstraint('visitor_hash', 'dev_log_id', 'emoji_type', name='unique_visitor_reaction'),
     )
 
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    emoji_type: so.Mapped[str] = so.mapped_column(sa.String(10)) # 'fire', 'heart', 'rocket'
-    
-    # 访客指纹：可以是 IP 的哈希，也可以是前端生成的 uuid 存 cookie
+    emoji_type: so.Mapped[str] = so.mapped_column(sa.String(10)) 
     visitor_hash: so.Mapped[str] = so.mapped_column(sa.String(64), index=True)
-    
     timestamp: so.Mapped[datetime] = so.mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    # 外键
     dev_log_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dev_log.id'))
     dev_log: so.Mapped['DevLog'] = so.relationship(back_populates='reactions')
