@@ -15,23 +15,18 @@ services:
       - "5000"
 
   # 服务 2: Nginx 前端 + 反向代理
-  nginx:
+nginx:
     image: nginx:alpine
     container_name: my-nginx
     restart: always
     ports:
       - "80:80"
-      - "443:443"  # 👈 【修改点2】必须开启 HTTPS 端口！
+      - "443:443"
     volumes:
-      # 1. 挂载 Nginx 配置文件
       - ./nginx/flask.conf:/etc/nginx/conf.d/default.conf
-      
-      # 2. 👇 【修改点3】挂载 HTTPS 证书 (关键！)
-      # 只读模式 (:ro) 挂载，保证安全
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      
-      # 3. 👇 【修改点4】静态文件映射
-      # 为了让 Nginx 能处理静态图片/CSS，需要把 flask 的 static 文件夹也给它看一眼
+      # 👇 [新增] 将宿主机的验证目录挂载给 Nginx
+      - /var/www/certbot:/var/www/certbot:ro
       - ./app/static:/app/app/static
       - ./frontend:/usr/share/nginx/html
     depends_on:
